@@ -13,7 +13,7 @@ AGGREGATORS = ('count', 'sum', 'avg')
 
 
 def count(iterable):
-	return sum(1 for _ in iterable)
+	return builtins.sum(1 for _ in iterable)
 
 
 def sum(iterable):
@@ -35,7 +35,7 @@ def parse_aggregator(s):
 	s = s.split(':', 2)
 	s[0] = int(s[0])
 	s[1] = AGGREGATORS[s[1]]
-	if len(s) <= 2: s.append('')
+	if len(s) == 2: s.append('')
 	return s
 
 
