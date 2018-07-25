@@ -188,12 +188,13 @@ def parse_args(args):
 	ap = argparse.ArgumentParser(description=__doc__)
 	ap.add_argument('groups',
 		type=parse_groups,
-		help='A list of field indexes used to group records (zero-based, '
-			'comma-separated).')
+		help='A list of field indexes or column ranges used to group records '
+			'(zero-based, comma-separated).')
 	ap.add_argument('aggregations',
 		nargs='+', type=Aggregation,
-		help='A field index (zero-based), the name of an aggregation function '
-			'({:s}), and optionally a format string, all colon-separated.'
+		help='A field index (zero-based) or column range, the name of an '
+			'aggregation function ({:s}), and optionally a format string, all '
+			'colon-separated.'
 			.format(', '.join(Aggregation.aggregator_functions)))
 	ap.add_argument('-F', '--input-field-separator', metavar='SEP',
 		help='The input field separator string. (default: a series of white-space '
