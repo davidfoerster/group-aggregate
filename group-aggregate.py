@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """Group and aggregate record fields"""
 
-import re
 import sys
 import math
 import array
@@ -13,11 +12,21 @@ from functools import reduce, partial as fpartial
 
 
 try:
+	import regex as re
+except ImportError:
+	import re
+
+try:
 	RegexType = re._pattern_type
 except AttributeError:
-	RegexType = type()
+	RegexType = type(re.compile(''))
 else:
 	assert isinstance(re.compile(''), RegexType)
+
+
+def pairs(iterable, count=2):
+	return zip(*map(itertools.islice,
+		itertools.tee(iterable, count), itertools.count(), itertools.repeat(None)))
 
 
 def first(iterable):
@@ -47,6 +56,7 @@ def iavg(iterable):
 	else:
 		total = isum(iterable)
 	return total / (count or float('nan'))
+
 
 def favg(iterable):
 	try:
@@ -96,8 +106,8 @@ class Aggregation:
 			self.aggregator = self.aggregator_functions.get(args[1])
 			if self.aggregator is None:
 				raise ValueError('Invalid aggregation function name: ' + repr(args[1]))
-			for k, v in zip(self.__slots__[2:], args[2:]):
-				setattr(self, k, v)
+			for v in zip(slots[2:], args[2:]):
+				setattr(self, *v)
 
 		else:
 			if l_args < l_mandatory:
@@ -106,16 +116,14 @@ class Aggregation:
 			if l_args > l_slots:
 				raise TypeError(
 					'Too many arguments: {:d} > {:d}'.format(l_args, l_slots))
-			for k, v in zip(self.__slots__, args):
-				setattr(self, k, v)
+			for v in zip(self.__slots__, args):
+				setattr(self, *v)
 
 		for k in self.__slots__[l_args:]:
 			setattr(self, k, defaults[k])
 
 
 	def _init_kw_args(self, kwargs):
-		print(*itertools.starmap('{:s}={!r}'.format, kwargs.items()), sep=', ')
-
 		for k in self.__slots__:
 			v = kwargs.pop(k, self)
 			if v is self:
@@ -154,7 +162,7 @@ def parse_regex_flags(s):
 	flags = 0
 	try:
 		for c in s:
-			flags |= getattr(re, c.uppercase())
+			flags |= getattr(re, c.upper())
 	except (AttributeError, TypeError):
 		raise ValueError('Invalid regular expression flag: ' + repr(c))
 	return flags
@@ -173,7 +181,7 @@ def format_field_index(idx):
 		return str(idx)
 
 	assert isinstance(idx, slice) and alt_if_none(idx.step, 1) == 1
-	return '{:d}-{}'.format(idx.start, alt_if_none(idx.stop, ''))
+	return '{:d}-{}'.format(idx.start, slice_stop_alt(idx, ''))
 
 
 def str_unescape(s):
@@ -278,7 +286,7 @@ def validate_args(ap, args):
 			key=lambda r: (r.start, slice_stop_alt(r)))
 		err = [
 			' and '.join(map(format_field_index, (a, b)))
-			for a, b in zip(err, itertools.islice(err, 1, None))
+			for a, b in pairs(err)
 			if a != b and (a.stop is None or b.start is None or b.start < a.stop)
 		]
 		if err:
@@ -287,38 +295,15 @@ def validate_args(ap, args):
 	return args
 
 
-def main(*args):
-	args = parse_args(args or None)
+def process_records(records, opts):
+	_print = fpartial(print, sep=opts.output_field_separator)
 
-	_print = fpartial(print, sep=args.output_field_separator)
-	records = sys.stdin
-	if args.skip > 0:
-		records = itertools.islice(records, args.skip, None)
-	if args.input_field_separator is None:
-		records = map(str.split, records)
-	else:
-		records = map(methodcaller('rstrip', '\n'), records)
-		if isinstance(args.input_field_separator, RegexType):
-			records = map(args.input_field_separator.split, records)
-		elif args.input_field_separator is not False:
-			records = map(
-				fpartial(str.split, sep=args.input_field_separator), records)
-	records = filter(None, records)
-
-	if not args.groups:
-		records = ((), records)
-	else:
-		group_key_func = itemgetter(*args.groups)
-		if not args.sorted:
-			records = sorted(records, key=group_key_func)
-		records = itertools.groupby(records, group_key_func)
-
-	reuse_records = len(args.aggregations) > 1
+	reuse_records = len(opts.aggregations) > 1
 	if reuse_records:
-		reuse_records = map(attrgetter('field_index'), args.aggregations)
-		if args.input_field_separator is False:
+		reuse_records = map(attrgetter('field_index'), opts.aggregations)
+		if opts.input_field_separator is False:
 			reuse_records = map(attrgetter('start', 'stop'), reuse_records)
-		reuse_records = len(args.aggregations) != len(frozenset(reuse_records))
+		reuse_records = len(opts.aggregations) != len(frozenset(reuse_records))
 
 	for group_key, group_records in records:
 		if reuse_records:
@@ -327,12 +312,40 @@ def main(*args):
 		aggregated_fields = (
 			format(agg.aggregator(map(itemgetter(agg.field_index), group_records)),
 				agg.format)
-			for agg in args.aggregations)
+			for agg in opts.aggregations)
 
-		if len(args.groups) == 1:
+		if len(opts.groups) == 1:
 			_print(group_key, *aggregated_fields)
 		else:
 			_print(*tuple(itertools.chain(group_key, aggregated_fields)))
+
+
+def main(*args):
+	opts = parse_args(args or None)
+
+	records = sys.stdin
+	if opts.skip > 0:
+		records = itertools.islice(records, opts.skip, None)
+	if opts.input_field_separator is None:
+		records = map(str.split, records)
+	else:
+		records = map(methodcaller('rstrip', '\n'), records)
+		if isinstance(opts.input_field_separator, RegexType):
+			records = map(opts.input_field_separator.split, records)
+		elif opts.input_field_separator is not False:
+			records = map(
+				fpartial(str.split, sep=opts.input_field_separator), records)
+	records = filter(None, records)
+
+	if not opts.groups:
+		records = ((), records)
+	else:
+		group_key_func = itemgetter(*opts.groups)
+		if not opts.sorted:
+			records = sorted(records, key=group_key_func)
+		records = itertools.groupby(records, group_key_func)
+
+	return process_records(records, opts)
 
 
 if __name__ == '__main__':
