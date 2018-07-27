@@ -154,7 +154,7 @@ def alt_if_none(x, alt):
 	return x if x is not None else alt
 
 
-def slice_stop_alt(r, alt=float('inf')):
+def slice_stop_alt(r, alt=sys.maxsize):
 	return alt_if_none(r.stop, alt)
 
 
@@ -263,12 +263,9 @@ def validate_args(ap, args):
 		args.input_field_separator = False
 
 	if len(args.groups) > 1:
-		# Discard keys and keep only the groups.
-		err = map(tuple, map(itemgetter(1),
-			itertools.groupby(sorted(args.groups))))
-		# Discard single-size groups. Field indices are supposedly equal within
-		# their group, so keep only the first.
-		err = tuple(group[0] for group in err if len(group) > 1)
+		err = tuple(itertools.chain.from_iterable(
+			itertools.islice(g, 1, 2)
+			for k, g in itertools.groupby(sorted(args.groups))))
 		if err:
 			ap.error(
 				'Duplicate grouping fields: ' + ', '.join(map(format_field_index, err)))
@@ -281,12 +278,11 @@ def validate_args(ap, args):
 					', '.join(map(format_field_index, err)))
 
 	if use_column_ranges and len(args.groups) + len(args.aggregations) > 1:
-		err = sorted(
-			itertools.chain(args.groups, map(idx_getter, args.aggregations)),
-			key=lambda r: (r.start, slice_stop_alt(r)))
 		err = [
 			' and '.join(map(format_field_index, (a, b)))
-			for a, b in pairs(err)
+			for a, b in pairs(sorted(
+				itertools.chain(args.groups, map(idx_getter, args.aggregations)),
+				key=lambda r: (r.start, slice_stop_alt(r))))
 			if a != b and (a.stop is None or b.start is None or b.start < a.stop)
 		]
 		if err:
