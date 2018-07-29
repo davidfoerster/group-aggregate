@@ -47,7 +47,7 @@ def fsum(iterable):
 	return math.fsum(map(float, iterable))
 
 
-def iavg(iterable):
+def iavg(iterable, default=float('nan')):
 	try:
 		count = len(iterable)
 	except TypeError:
@@ -55,10 +55,10 @@ def iavg(iterable):
 			lambda acc, x: (acc[0] + x, acc[1] + 1), map(int, iterable), (0, 0))
 	else:
 		total = isum(iterable)
-	return total / (count or float('nan'))
+	return total / count if count else default
 
 
-def favg(iterable):
+def favg(iterable, default=float('nan')):
 	try:
 		count = len(iterable)
 	except TypeError:
@@ -67,7 +67,7 @@ def favg(iterable):
 		total = math.fsum(iterable)
 	else:
 		total = fsum(iterable)
-	return total / (count or float('nan'))
+	return total / count if count else default
 
 
 class Aggregation:
@@ -283,10 +283,11 @@ def validate_args(ap, args):
 			for a, b in pairs(sorted(
 				itertools.chain(args.groups, map(idx_getter, args.aggregations)),
 				key=lambda r: (r.start, slice_stop_alt(r))))
-			if a != b and (a.stop is None or b.start is None or b.start < a.stop)
+			if a != b and (a.stop is None or b.start < a.stop)
 		]
 		if err:
-			ap.error('Non-equal overlapping field column ranges: ' + ', '.join(err))
+			print(ap.prog, 'Warning', 'Non-equal overlapping field column ranges',
+				', '.join(err), sep=': ', file=sys.stderr)
 
 	return args
 
