@@ -29,6 +29,27 @@ def pairs(iterable, count=2):
 		itertools.tee(iterable, count), itertools.count(), itertools.repeat(None)))
 
 
+class sized_map(collections.abc.Iterator):
+
+	__slots__ = ('__next__', '__len__')
+
+
+	def __init__(self, func, *iterables, size=None):
+		self.__next__ = map(func, *iterables).__next__
+
+		if size is None:
+			try:
+				size = min(map(len, iterables))
+			except TypeError:
+				pass
+		elif not isinstance(size, int):
+			raise TypeError("'size' must be an int or None")
+		elif size < 0:
+			raise ValueError("'size' must not be negative")
+		self.__len__ = None if size is None else lambda: size
+
+
+
 def first(iterable):
 	return next(iter(iterable), None)
 
