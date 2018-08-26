@@ -218,7 +218,9 @@ def parse_args(args):
 			'character)')
 	ap.add_argument('--ifs-regexp', metavar='flags',
 		nargs='?', const=0, type=parse_regex_flags,
-		help='Interprete the input field separator as a regular expression.')
+		help='Interprete the input field separator as a regular expression. '
+			'The optional argument value may contain the following flags: {}.'
+			.format(''.join(filter(lambda n: len(n) == 1, re.__all__)).lower()))
 	ap.add_argument('--skip', metavar='N',
 		type=int, default=0,
 		help='Skip N lines at the beginning of the input (e. g. header lines).')
