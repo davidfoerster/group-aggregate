@@ -133,10 +133,10 @@ class Aggregation:
 			if l_args > l_slots:
 				raise TypeError(
 					'Too many arguments: {:d} > {:d}'.format(l_args, l_slots))
-			for v in zip(self.__slots__, args):
+			for v in zip(slots, args):
 				setattr(self, *v)
 
-		for k in self.__slots__[l_args:]:
+		for k in slots[l_args:]:
 			setattr(self, k, defaults[k])
 
 
