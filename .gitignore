@@ -1,0 +1,30 @@
+# Compiled CPython modules
+*.py[co]
+
+# Application bundles
+*.zip
+
+# Generated translation data
+*.pot
+*.mo
+
+# Transient IDE and build system files
+*.sublime-workspace
+
+# OS generated files #
+.DS_Store
+.DS_Store?
+._*
+*~
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+*.orig
+*.rej
+*_BASE_*
+*_LOCAL_*
+*_REMOTE_*
+*.swp
+*.bak
