@@ -168,11 +168,15 @@ def parse_regex_flags(s):
 	return flags
 
 
+def assert_slice(idx):
+	return isinstance(idx, slice) and alt_if_none(idx.step, 1) == 1
+
+
 def validate_field_index(idx):
 	if isinstance(idx, int):
 		return idx > 0
 
-	assert isinstance(idx, slice) and alt_if_none(idx.step, 1) == 1
+	assert assert_slice(idx)
 	return 0 <= idx.start < slice_stop_alt(idx)
 
 
@@ -180,7 +184,7 @@ def format_field_index(idx):
 	if isinstance(idx, int):
 		return str(idx)
 
-	assert isinstance(idx, slice) and alt_if_none(idx.step, 1) == 1
+	assert assert_slice(idx)
 	return '{:d}-{}'.format(idx.start, slice_stop_alt(idx, ''))
 
 
