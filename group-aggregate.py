@@ -69,26 +69,22 @@ def fsum(iterable):
 
 
 def iavg(iterable, default=float('nan')):
-	try:
-		count = len(iterable)
-	except TypeError:
-		total, count = reduce(
-			lambda acc, x: (acc[0] + x, acc[1] + 1), map(int, iterable), (0, 0))
+	iterable = sized_map(int, iterable)
+	if iterable.__len__:
+		size = len(iterable)
+		total = sum(iterable)
 	else:
-		total = isum(iterable)
-	return total / count if count else default
+		total, size = reduce(
+			lambda acc, x: (acc[0] + x, acc[1] + 1), iterable, (0, 0))
+	return total / size if size else default
 
 
 def favg(iterable, default=float('nan')):
-	try:
-		count = len(iterable)
-	except TypeError:
-		iterable = array.array('d', map(float, iterable))
-		count = len(iterable)
-		total = math.fsum(iterable)
-	else:
-		total = fsum(iterable)
-	return total / count if count else default
+	iterable = sized_map(float, iterable)
+	if not iterable.__len__:
+		iterable = array.array('d', iterable)
+	size = len(iterable)
+	return math.fsum(iterable) / size if size else default
 
 
 class Aggregation:
