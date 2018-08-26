@@ -331,12 +331,13 @@ def process_records(records, opts):
 			group_records = tuple(group_records)
 
 		aggregated_fields = (
-			format(agg.aggregator(map(itemgetter(agg.field_index), group_records)),
+			format(
+				agg.aggregator(sized_map(itemgetter(agg.field_index), group_records)),
 				agg.format)
 			for agg in opts.aggregations)
 
 		if len(opts.groups) == 1:
-			_print(group_key, *aggregated_fields)
+			_print(group_key, *tuple(aggregated_fields))
 		else:
 			_print(*tuple(itertools.chain(group_key, aggregated_fields)))
 
