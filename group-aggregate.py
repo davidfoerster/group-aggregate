@@ -221,11 +221,12 @@ def parse_args(args):
 		help='Interprete the input field separator as a regular expression. '
 			'The optional argument value may contain the following flags: {}.'
 			.format(''.join(filter(lambda n: len(n) == 1, re.__all__)).lower()))
-	ap.add_argument('--skip', metavar='N',
+	ap.add_argument('-s', '--skip', metavar='N',
 		type=int, default=0,
 		help='Skip N lines at the beginning of the input (e. g. header lines).')
-	ap.add_argument('-s', '--sorted', action='store_true',
-		help='Indicates that the input records are already sorted.')
+	ap.add_argument('-S', '--no-sort', dest='sorted',
+		action='store_false', default=True,
+		help='Assume that the input records are already sorted.')
 
 	return validate_args(ap, ap.parse_args(args))
 
