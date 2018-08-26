@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -O
 """Group and aggregate record fields"""
 
 import sys
